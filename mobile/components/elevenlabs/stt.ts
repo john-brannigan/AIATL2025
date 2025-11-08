@@ -2,7 +2,7 @@ import fs from "fs";
 import FormData from "form-data";
 import fetch from "node-fetch";
 
-const ELEVENLABS_API_KEY = "sk_87f129a69d2948f1960f3724281e658cb6fd92facf603f27";
+const ELEVENLABS_API_KEY = "e5e887f82d89810f3e65a408cf6c16bb590a59b5be4f8fef35b46c4b38b4b1aa";
 
 // Example: use ElevenLabs default speech-to-text model
 const MODEL_ID = "scribe_v1";
