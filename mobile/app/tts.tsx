@@ -372,7 +372,7 @@ export default function TTSScreen() {
 
             <TouchableOpacity 
               style={styles.homeButton} 
-              onPress={() => router.push('/(tabs)')}>
+              onPress={() => router.push('./index.tsx')}>
               <Text style={styles.buttonText}>🏠 Go Home</Text>
             </TouchableOpacity>
           </View>
