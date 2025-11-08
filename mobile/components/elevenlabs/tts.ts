@@ -1,48 +1,34 @@
-import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system/next';
-import * as Speech from 'expo-speech';
+import { Audio } from "expo-av";
+import * as Speech from "expo-speech";
+import { ELEVENLABS_API_KEY } from "@env";
+import { File, Paths, Directory } from "expo-file-system/next";
 
 const ELEVENLABS_MODEL = "eleven_turbo_v2";
-
 const VOICE_ID = "iP95p4xoKVk53GoZ742B";
 
-const getCacheDirectory = () => {
-  return FileSystem.Paths.cache + '/';
-};
+// Get cache directory as a Directory object
+const getCacheDirectory = (): Directory => new Directory(Paths.cache);
 
 export async function textToSpeech(text: string): Promise<string> {
   try {
-    console.log('Attempting ElevenLabs TTS...');
-    const filePath = await textToSpeechElevenLabs(text);
-    console.log('ElevenLabs TTS succeeded');
-    return filePath;
+    const fileUri = await textToSpeechElevenLabs(text);
+    return fileUri;
   } catch (error) {
-    console.warn('ElevenLabs TTS failed, falling back to native TTS:', error);
-    const filePath = await textToSpeechNative(text);
-    console.log('Native TTS succeeded');
-    return filePath;
+    console.warn("⚠️ ElevenLabs failed, falling back to native:", error);
+    await textToSpeechNative(text);
+    return "native";
   }
 }
 
 async function textToSpeechElevenLabs(text: string): Promise<string> {
-  await Audio.setAudioModeAsync({
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: false,
-    shouldDuckAndroid: true,
-  });
-
-  console.log('Calling ElevenLabs API...');
-  if (!process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY) {
-    throw new Error('Missing ELEVENLABS_API_KEY environment variable');
-  }
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY,
+        Accept: "audio/mpeg",
+        "Content‑Type": "application/json",
+        "xi-api-key": ELEVENLABS_API_KEY,
       },
       body: JSON.stringify({
         text,
@@ -53,31 +39,34 @@ async function textToSpeechElevenLabs(text: string): Promise<string> {
   );
 
   if (!response.ok) {
-    const errorBody = await response.text();
-    console.error('ElevenLabs API error response:', errorBody);
-    throw new Error(`TTS request failed: ${response.status} - ${errorBody}`);
+    const errorText = await response.text();
+    throw new Error(errorText);
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  const audioBytes = new Uint8Array(arrayBuffer);
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-  // Save to temporary file
+  const directory = getCacheDirectory();
+  await directory.create({ intermediates: true });
+
   const fileName = `temp-audio-${Date.now()}.mp3`;
-  const fileUri = getCacheDirectory() + fileName;
+  // Construct the file in that directory
+  const file = new File(directory, fileName);
 
-  const file = new FileSystem.File(fileUri);
-  await file.write(audioBytes);
+  await file.create();                // create the file
+  await file.write(uint8Array);       // write binary data
 
-  console.log('Audio file saved at:', fileUri);
+  const fileUri = file.uri;
+
+  // Play the audio
+  const { sound } = await Audio.Sound.createAsync({ uri: fileUri });
+  await sound.playAsync();
+
   return fileUri;
 }
 
-// Fallback native text-to-speech using Expo Speech
-async function textToSpeechNative(text: string): Promise<string> {
+async function textToSpeechNative(text: string): Promise<void> {
   return new Promise((resolve) => {
-    Speech.speak(text, {
-      onDone: () => resolve('native'),
-      language: 'en',
-    });
+    Speech.speak(text, { onDone: resolve, language: "en" });
   });
 }
