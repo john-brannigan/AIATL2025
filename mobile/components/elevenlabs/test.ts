@@ -1,46 +1,43 @@
-import { textToSpeech } from "./tts";
-import { speechToText } from "./stt";
-import fs from "fs";
 import readline from "readline";
+import fs from "fs";
+import { textToSpeech } from "./tts.ts";
+import { speechToText } from "./stt.ts";
 
-// Utility to prompt input
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-async function testTTS() {
-  rl.question("Enter text to convert to speech: ", async (inputText) => {
-    try {
-      console.log("Generating TTS...");
-      const audioPath = await textToSpeech(inputText);
-      console.log("TTS audio saved at:", audioPath);
-    } catch (err) {
-      console.error("TTS error:", err);
-    }
-
-    testSTT(); // move on to STT test
-  });
+// Prompt utility
+function questionAsync(query: string): Promise<string> {
+  return new Promise(resolve => rl.question(query, resolve));
 }
 
-async function testSTT() {
-  rl.question("Enter path to audio file to convert to text: ", async (audioPath) => {
+async function main() {
+  try {
+    // Test TTS
+    const text = await questionAsync("Enter text to convert to speech: ");
+    console.log("Generating TTS audio...");
+    const ttsFile = await textToSpeech(text);
+    console.log(`TTS audio saved as: ${ttsFile}`);
+
+    // Test STT
+    const audioPath = await questionAsync("Enter path to audio file for STT: ");
     if (!fs.existsSync(audioPath)) {
-      console.error("File does not exist.");
+      console.error("Audio file does not exist. Exiting.");
       rl.close();
       return;
     }
 
-    try {
-      console.log("Converting speech to text...");
-      const text = await speechToText(audioPath);
-      console.log("Transcribed text:", text);
-    } catch (err) {
-      console.error("STT error:", err);
-    }
-
+    console.log("Converting audio to text...");
+    const transcribedText = await speechToText(audioPath);
+    console.log("Transcribed text:", transcribedText);
+  } catch (err) {
+    console.error("Error:", err);
+  } finally {
     rl.close();
-  });
+  }
 }
 
-testTTS();
+// Run the test
+main();
