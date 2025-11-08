@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/next';
 import { ELEVENLABS_API_KEY } from '@env';
 
 export interface SpeechRecognitionResult {
@@ -68,12 +68,10 @@ export async function stopRecording(): Promise<string | null> {
 export async function transcribeAudio(audioUri: string): Promise<string> {
   try {
     console.log("Reading audio file...");
-    const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
-      encoding: 'base64',
-    });
+    const file = new FileSystem.File(audioUri);
+    const audioBytes = await file.bytes();
 
-    const audioData = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
-    const blob = new Blob([audioData], { type: 'audio/m4a' });
+    const blob = new Blob([audioBytes], { type: 'audio/m4a' });
 
     const formData = new FormData();
     formData.append('file', blob, 'audio.m4a');
