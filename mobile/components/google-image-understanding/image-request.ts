@@ -1,8 +1,8 @@
 // ...existing code...
 import { GoogleGenAI } from '@google/genai';
 
-const DEFAULT_LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'global';
-const DEFAULT_PROJECT = process.env.GOOGLE_CLOUD_PROJECT;
+const DEFAULT_LOCATION = "global";
+const DEFAULT_PROJECT = "aiatl2025";
 
 /**
  * Send an image (URI) and a text prompt to the Google GenAI image-text model.
