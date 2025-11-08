@@ -1,16 +1,16 @@
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 
 export interface SpeechRecognitionResult {
   transcript: string;
   isFinal: boolean;
 }
 
+let recording: Audio.Recording | null = null;
+
 export async function requestPermissions(): Promise<boolean> {
-  const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-  return result.granted;
+  const { status } = await Audio.requestPermissionsAsync();
+  return status === 'granted';
 }
 
 export async function startRecording(
@@ -24,15 +24,18 @@ export async function startRecording(
       return;
     }
 
-    console.log("Starting speech recognition...");
+    console.log("Starting audio recording...");
     
-    await ExpoSpeechRecognitionModule.start({
-      lang: "en-US",
-      interimResults: true,
-      maxAlternatives: 1,
-      continuous: false,
-      requiresOnDeviceRecognition: false,
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
     });
+
+    recording = new Audio.Recording();
+    await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    await recording.startAsync();
+    
+    console.log("Recording started");
 
   } catch (error) {
     console.error("Error starting recording:", error);
@@ -40,14 +43,29 @@ export async function startRecording(
   }
 }
 
-export async function stopRecording(): Promise<void> {
+export async function stopRecording(): Promise<string | null> {
   try {
-    console.log("Stopping speech recognition...");
-    await ExpoSpeechRecognitionModule.stop();
+    if (!recording) {
+      console.log("No recording to stop");
+      return null;
+    }
+
+    console.log("Stopping recording...");
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    recording = null;
+    
+    console.log("Recording saved to:", uri);
+    return uri;
+
   } catch (error) {
     console.error("Error stopping recording:", error);
+    return null;
   }
 }
 
-// Export the hook for use in components
-export { useSpeechRecognitionEvent };
+// Dummy hook for compatibility
+export function useSpeechRecognitionEvent(event: string, callback: (data: any) => void) {
+  // This is a placeholder - real speech recognition requires native module
+  console.log("Speech recognition event listener:", event);
+}
