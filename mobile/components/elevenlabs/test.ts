@@ -1,6 +1,13 @@
+import 'dotenv/config';
 import readline from "readline";
 import { textToSpeech } from "./tts.ts";
 import { speechToText } from "./stt.ts";
+
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
+if (!ELEVENLABS_API_KEY) {
+  console.error('Missing ELEVENLABS_API_KEY in .env');
+  process.exit(1);
+}
 
 // setup readline interface for input
 const rl = readline.createInterface({
