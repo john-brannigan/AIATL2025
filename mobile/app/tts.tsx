@@ -2,7 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import { textToSpeech } from '@/components/elevenlabs/tts';
-import { startRecording, stopRecording, useSpeechRecognitionEvent } from '@/components/elevenlabs/stt-native';
+import { startRecording, stopRecording, requestPermissions } from '@/components/elevenlabs/stt-native';
 
 export default function TTSScreen() {
   const params = useLocalSearchParams();
@@ -12,37 +12,9 @@ export default function TTSScreen() {
   const [question, setQuestion] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedText, setRecordedText] = useState<string>('');
-  const [interimText, setInterimText] = useState<string>('');
+  const [recordedAudioUri, setRecordedAudioUri] = useState<string>('');
 
   console.log('TTS Screen loaded with photo:', photoUri);
-
-  // Listen for speech recognition events
-  useSpeechRecognitionEvent("result", (event) => {
-    console.log("Speech result:", event.results);
-    const transcript = event.results[0]?.transcript || "";
-    
-    if (event.isFinal) {
-      console.log("Final transcript:", transcript);
-      setRecordedText(transcript);
-      setInterimText('');
-      setIsRecording(false);
-    } else {
-      setInterimText(transcript);
-    }
-  });
-
-  useSpeechRecognitionEvent("error", (event) => {
-    console.error("Speech recognition error:", event.error);
-    Alert.alert("Error", `Recognition failed: ${event.error}`);
-    setIsRecording(false);
-    setInterimText('');
-  });
-
-  useSpeechRecognitionEvent("end", () => {
-    console.log("Speech recognition ended");
-    setIsRecording(false);
-  });
 
   // Generate a question based on the photo
   const generateQuestion = () => {
@@ -73,7 +45,7 @@ export default function TTSScreen() {
       console.log('TTS completed successfully');
     } catch (error) {
       console.error('Error speaking:', error);
-      Alert.alert('Error', 'Failed to speak the question. Check console for details.');
+      Alert.alert('Error', 'Failed to speak the question.');
     } finally {
       setIsSpeaking(false);
     }
@@ -82,39 +54,27 @@ export default function TTSScreen() {
   // Handle recording toggle
   const toggleRecording = async () => {
     if (isRecording) {
-      await stopRecording();
+      const uri = await stopRecording();
       setIsRecording(false);
+      if (uri) {
+        setRecordedAudioUri(uri);
+        Alert.alert('Success', 'Audio recorded! Note: Speech-to-text requires a development build.');
+      }
     } else {
-      setRecordedText('');
-      setInterimText('');
+      setRecordedAudioUri('');
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) {
+        Alert.alert('Permission Required', 'Microphone access is needed.');
+        return;
+      }
       await startRecording(
-        (result) => {
-          console.log("Recording result:", result);
-        },
+        () => {},
         (error) => {
           Alert.alert("Error", error);
           setIsRecording(false);
         }
       );
       setIsRecording(true);
-    }
-  };
-
-  // Speak the recorded text
-  const speakRecordedText = async () => {
-    if (!recordedText) {
-      Alert.alert("No Text", "Please record something first!");
-      return;
-    }
-    
-    setIsSpeaking(true);
-    try {
-      await textToSpeech(recordedText);
-    } catch (error) {
-      console.error('Error speaking recorded text:', error);
-      Alert.alert('Error', 'Failed to speak the recorded text.');
-    } finally {
-      setIsSpeaking(false);
     }
   };
 
@@ -169,7 +129,10 @@ export default function TTSScreen() {
 
           {/* Recording Section */}
           <View style={styles.recordingContainer}>
-            <Text style={styles.recordingLabel}>Voice Input:</Text>
+            <Text style={styles.recordingLabel}>Voice Recording:</Text>
+            <Text style={styles.warningText}>
+              Note: Speech-to-text requires a development build with expo-speech-recognition
+            </Text>
             
             <TouchableOpacity 
               style={[styles.recordButton, isRecording && styles.recordButtonActive]}
@@ -179,26 +142,10 @@ export default function TTSScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Show interim results while recording */}
-            {interimText && (
-              <View style={styles.interimContainer}>
-                <Text style={styles.interimLabel}>Listening...</Text>
-                <Text style={styles.interimText}>{interimText}</Text>
-              </View>
-            )}
-
-            {/* Show final recorded text */}
-            {recordedText && (
+            {recordedAudioUri && (
               <View style={styles.recordedContainer}>
-                <View style={styles.recordedHeader}>
-                  <Text style={styles.recordedLabel}>You said:</Text>
-                  <TouchableOpacity onPress={speakRecordedText} disabled={isSpeaking}>
-                    <Text style={styles.playbackButton}>
-                      {isSpeaking ? '🔊' : '▶️ Play back'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.recordedText}>{recordedText}</Text>
+                <Text style={styles.recordedLabel}>Audio recorded:</Text>
+                <Text style={styles.recordedText} numberOfLines={1}>{recordedAudioUri}</Text>
               </View>
             )}
           </View>
@@ -334,8 +281,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#666',
-    marginBottom: 12,
+    marginBottom: 8,
     textTransform: 'uppercase',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#ff9500',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   recordButton: {
     backgroundColor: '#ff3b30',
@@ -351,51 +304,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  interimContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  interimLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#999',
-    marginBottom: 4,
-  },
-  interimText: {
-    fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
-  },
   recordedContainer: {
     marginTop: 16,
     padding: 16,
     backgroundColor: '#e8f5e9',
     borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#34c759',
-  },
-  recordedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
   recordedLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#2e7d32',
-  },
-  playbackButton: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '600',
+    marginBottom: 4,
   },
   recordedText: {
-    fontSize: 16,
-    color: '#1b5e20',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#666',
   },
   buttonContainer: {
     gap: 12,
