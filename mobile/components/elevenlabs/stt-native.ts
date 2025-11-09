@@ -82,6 +82,7 @@ export async function transcribeAudio(audioUri: string): Promise<string> {
       name: 'audio.m4a',
     } as any);
     formData.append('model_id', 'scribe_v1');
+    formData.append('language', 'en'); // force English
 
     const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
       method: 'POST',
