@@ -1,12 +1,18 @@
 import { StyleSheet, View, Pressable, Text, Image, StatusBar } from 'react-native';
 import { useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import CameraScreen from './camera';
 
 export default function HomeScreen() {
   const [showCamera, setShowCamera] = useState(false);
 
-  const handleCameraPress = () => {
+  const handleCameraPress = async () => {
     console.log('Camera button pressed!');
+    try {
+      await Haptics.selectionAsync();
+    } catch (e) {
+      // ignore haptics errors
+    }
     setShowCamera(true);
   };
 
