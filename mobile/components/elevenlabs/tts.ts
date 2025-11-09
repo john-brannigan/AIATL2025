@@ -59,7 +59,7 @@ async function textToSpeechElevenLabs(text: string): Promise<string> {
       body: JSON.stringify({
         text,
         model_id: ELEVENLABS_MODEL,
-        voice_settings: { stability: 0.4, similarity_boost: 0.7 },
+        voice_settings: { stability: 0.5, similarity_boost: 0.5 },
       }),
     }
   );
