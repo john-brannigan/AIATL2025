@@ -1,6 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { textToSpeech } from '@/components/elevenlabs/tts';
 import { startRecording, stopRecording, requestPermissions, transcribeAudio } from '@/components/elevenlabs/stt-native';
 import sendImageWithPrompt from '@/components/google-image-understanding/image-request';
@@ -176,7 +177,13 @@ export default function TTSScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.content}>
           {photoUri ? (
-            <TouchableOpacity style={styles.imageContainer} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+              style={styles.imageContainer}
+              onPress={async () => {
+                try { await Haptics.selectionAsync(); } catch (e) {}
+                navigation.goBack();
+              }}
+            >
               <Image source={{ uri: photoUri }} style={styles.image} />
             </TouchableOpacity>
           ) : (
@@ -189,7 +196,7 @@ export default function TTSScreen() {
             <View style={styles.squareActionRow}>
               <TouchableOpacity
                 style={[styles.squareActionButton, styles.recordButton, isRecording && styles.recordButtonActive]}
-                onPress={toggleRecording}
+                onPress={async () => { try { await Haptics.selectionAsync(); } catch (e) {} ; toggleRecording(); }}
                 disabled={isTranscribing || isAnalyzingImage}
               >
                 <Text style={styles.squareActionText}>{isRecording ? '⏹️' : '🎤'}</Text>
@@ -198,7 +205,7 @@ export default function TTSScreen() {
 
               <TouchableOpacity
                 style={[styles.squareActionButton, styles.analyzeButton]}
-                onPress={() => analyzeImageWithAI()}
+                onPress={async () => { try { await Haptics.selectionAsync(); } catch (e) {} ; analyzeImageWithAI(); }}
                 disabled={isAnalyzingImage || isSpeaking}
               >
                 <Text style={styles.squareActionText}>🔍</Text>
@@ -219,7 +226,11 @@ export default function TTSScreen() {
               </View>
             )}
             {transcribedText && !isTranscribing && !isAnalyzingImage && (
-              <TouchableOpacity style={styles.transcribedContainer} onPress={speakTranscribedText} disabled={isSpeaking}>
+              <TouchableOpacity
+                style={styles.transcribedContainer}
+                onPress={async () => { try { await Haptics.selectionAsync(); } catch (e) {} ; speakTranscribedText(); }}
+                disabled={isSpeaking}
+              >
                 <View style={styles.transcribedHeader}>
                   <Text style={styles.transcribedLabel}>You said:</Text>
                 </View>
@@ -227,7 +238,11 @@ export default function TTSScreen() {
               </TouchableOpacity>
             )}
             {aiResponse && (
-              <TouchableOpacity onPress={speakAIResponse} disabled={isSpeaking} style={styles.aiResponseContainer}>
+              <TouchableOpacity
+                onPress={async () => { try { await Haptics.selectionAsync(); } catch (e) {} ; speakAIResponse(); }}
+                disabled={isSpeaking}
+                style={styles.aiResponseContainer}
+              >
                 <View style={styles.aiResponseHeader}>
                   <Text style={styles.aiResponseLabel}>🤖 AI Analysis:</Text>
                 </View>
