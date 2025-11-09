@@ -4,7 +4,6 @@ import * as FileSystem from "expo-file-system/legacy";
 import { Audio } from "expo-av"; // new package for audio playback
 
 const ELEVENLABS_MODEL = "eleven_turbo_v2";
-
 const VOICE_ID = "iP95p4xoKVk53GoZ742B";
 
 // Load API key safely
@@ -36,15 +35,12 @@ function uint8ArrayToBase64(u8Arr: Uint8Array): string {
 
 export async function textToSpeech(text: string): Promise<string> {
   try {
-    console.log('Attempting ElevenLabs TTS...');
-    const filePath = await textToSpeechElevenLabs(text);
-    console.log('ElevenLabs TTS succeeded');
-    return filePath;
+    const fileUri = await textToSpeechElevenLabs(text);
+    return fileUri;
   } catch (error) {
-    console.warn('ElevenLabs TTS failed, falling back to native TTS:', error);
-    const filePath = await textToSpeechNative(text);
-    console.log('Native TTS succeeded');
-    return filePath;
+    console.warn("⚠️ ElevenLabs failed, falling back to native:", error);
+    await textToSpeechNative(text);
+    return "native";
   }
 }
 
@@ -75,7 +71,7 @@ async function textToSpeechElevenLabs(text: string): Promise<string> {
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  const audioBytes = new Uint8Array(arrayBuffer);
+  const uint8Array = new Uint8Array(arrayBuffer);
 
   const base64Audio = uint8ArrayToBase64(uint8Array);
 
@@ -92,12 +88,8 @@ async function textToSpeechElevenLabs(text: string): Promise<string> {
   return fileUri;
 }
 
-// Fallback native text-to-speech using Expo Speech
-async function textToSpeechNative(text: string): Promise<string> {
+async function textToSpeechNative(text: string): Promise<void> {
   return new Promise((resolve) => {
-    Speech.speak(text, {
-      onDone: () => resolve('native'),
-      language: 'en',
-    });
+    Speech.speak(text, { onDone: resolve, language: "en" });
   });
 }
