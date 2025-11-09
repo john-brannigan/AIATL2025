@@ -147,9 +147,9 @@ export default function TTSScreen() {
         <View style={styles.content}>
           {/* Display the captured image */}
           {photoUri ? (
-            <View style={styles.imageContainer}>
+            <TouchableOpacity style={styles.imageContainer} onPress={() => navigation.goBack()}>
               <Image source={{ uri: photoUri }} style={styles.image} />
-            </View>
+            </TouchableOpacity>
           ) : (
             <View style={styles.imageContainer}>
               <Text style={styles.errorText}>No photo provided</Text>
@@ -161,9 +161,6 @@ export default function TTSScreen() {
             <Text style={styles.recordingLabel}>Voice Input:</Text>
             <Text style={styles.hintText}>
               Try saying: "What is in front of me?" or "Describe this image"
-            </Text>
-            <Text style={styles.warningText}>
-              📝 Using mock transcription for testing. Image uploads to Google Cloud Storage.
             </Text>
             
             <TouchableOpacity 
@@ -233,22 +230,6 @@ export default function TTSScreen() {
               <Text style={styles.analyzeButtonText}>
                 {isAnalyzingImage ? '🔄 Analyzing...' : '🔍 Analyze Image Now'}
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Action buttons */}
-          <View style={styles.buttonContainer}>
-
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => navigation.goBack()}>
-              <Text style={styles.buttonText}>📷 Take Another Photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.homeButton} 
-              onPress={() => navigation.navigate('Home' as any)}>
-              <Text style={styles.buttonText}>🏠 Go Home</Text>
             </TouchableOpacity>
           </View>
         </View>
