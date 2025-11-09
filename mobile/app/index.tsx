@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 125,
+    height: 125,
   },
   title: {
     fontSize: 64,
