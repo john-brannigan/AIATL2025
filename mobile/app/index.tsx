@@ -1,13 +1,30 @@
-import { StyleSheet, View, Pressable, Text, Image, StatusBar } from 'react-native';
+import { StyleSheet, View, Pressable, Text, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import CameraScreen from './camera';
+import { textToSpeech } from '@/components/elevenlabs/tts';
 
 export default function HomeScreen() {
   const [showCamera, setShowCamera] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const handleCameraPress = () => {
     console.log('Camera button pressed!');
     setShowCamera(true);
+  };
+
+  const handleTutorialPress = async () => {
+    setIsSpeaking(true);
+    const tutorialText = `Welcome to Hearo! This app helps you understand your surroundings using AI. 
+    Tap the camera button to take a photo. Then, use voice commands to ask questions about what's in the image. 
+    I'll use artificial intelligence to analyze the photo and tell you what I see. Let's get started!`;
+    
+    try {
+      await textToSpeech(tutorialText);
+    } catch (error) {
+      console.error('TTS error:', error);
+    } finally {
+      setIsSpeaking(false);
+    }
   };
 
   // If camera screen should be shown, render it instead
@@ -28,7 +45,7 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Big Circular Camera Button */}
+      {/* Big Square Camera Button */}
       <View style={styles.mainContent}>
         <Pressable 
           style={({ pressed }) => [
@@ -43,6 +60,22 @@ export default function HomeScreen() {
           />
         </Pressable>
         <Text style={styles.tapToStart}>Tap to Start</Text>
+        
+        {/* Tutorial Button */}
+        <Pressable 
+          style={({ pressed }) => [
+            styles.tutorialButton,
+            pressed && styles.tutorialButtonPressed
+          ]}
+          onPress={handleTutorialPress}
+          disabled={isSpeaking}
+        >
+          {isSpeaking ? (
+            <ActivityIndicator color="#5E17EB" size="small" />
+          ) : (
+            <Text style={styles.tutorialButtonText}>🎧 How to Use</Text>
+          )}
+        </Pressable>
       </View>
 
       {/* Features */}
@@ -112,6 +145,31 @@ const styles = StyleSheet.create({
   tapToStart: {
     marginTop: 24,
     fontSize: 20,
+    fontWeight: '600',
+    color: '#5E17EB',
+  },
+  tutorialButton: {
+    marginTop: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#5E17EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  tutorialButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  tutorialButtonText: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#5E17EB',
   },
