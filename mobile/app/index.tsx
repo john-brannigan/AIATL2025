@@ -77,13 +77,6 @@ export default function HomeScreen() {
           )}
         </Pressable>
       </View>
-
-      {/* Features */}
-      <View style={styles.features}>
-        <Text style={styles.featureText}>• AI-powered image analysis</Text>
-        <Text style={styles.featureText}>• Voice commands & text-to-speech</Text>
-        <Text style={styles.featureText}>• Real-time object recognition</Text>
-      </View>
     </View>
   );
 }
@@ -172,15 +165,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#5E17EB',
-  },
-  features: {
-    paddingHorizontal: 40,
-    paddingBottom: 40,
-    gap: 8,
-  },
-  featureText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
   },
 });
